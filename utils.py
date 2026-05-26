@@ -54,3 +54,77 @@ class Heap:
 
     def __len__(self):
         return len(self.data)
+
+class TrieNode:
+    def __init__(self):
+        self.filhos = {}
+        self.fim_chave = False
+        self.qtd = 0
+
+class Trie:
+    def __init__(self, separador=None):
+        self.raiz = TrieNode()
+        self.__sep = separador
+
+    def __tokenizar(self, s):
+        return s.split(self.__sep) if self.__sep else s
+
+    def insert(self, chave):
+        atual = self.raiz
+        for parte in self.__tokenizar(chave):
+            if parte not in atual.filhos:
+                atual.filhos[parte] = TrieNode()
+            atual = atual.filhos[parte]
+            atual.qtd += 1
+        atual.fim_chave = True
+
+    def busca(self, chave):
+        no = self.__walk(chave)
+        return no is not None and no.fim_chave
+
+    def verificar_prefixo(self, prefixo):
+        return self.__walk(prefixo) is not None
+
+    def contar_prefixo(self, prefixo):
+        no = self.__walk(prefixo)
+        return no.qtd if no else 0
+
+    def sugerir(self, prefixo):
+        no = self.__walk(prefixo)
+        if no is None:
+            return []
+        resultado = []
+        sep = self.__sep or ''
+
+        def dfs(no, caminho):
+            if no.fim_chave:
+                resultado.append(sep.join(caminho))
+            for parte, filho in no.filhos.items():
+                dfs(filho, caminho + [parte])
+
+        dfs(no, list(self.__tokenizar(prefixo)))
+        return resultado
+
+    def maior_prefixo_k(self, k):
+        sep = self.__sep or ''
+        melhor = [None, 0]
+
+        def dfs(no, prof, caminho):
+            if prof == k:
+                if no.qtd > melhor[1]:
+                    melhor[0] = sep.join(caminho)
+                    melhor[1] = no.qtd
+                return
+            for parte, filho in no.filhos.items():
+                dfs(filho, prof + 1, caminho + [parte])
+
+        dfs(self.raiz, 0, [])
+        return melhor[0], melhor[1]
+
+    def __walk(self, s):
+        atual = self.raiz
+        for parte in self.__tokenizar(s):
+            if parte not in atual.filhos:
+                return None
+            atual = atual.filhos[parte]
+        return atual
